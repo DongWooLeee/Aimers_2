@@ -93,6 +93,43 @@
 
 ---
 
+# 5. 모델링 (Modeling)
+
+## 5.1 핵심 아이디어
+- **CatBoost Regressor**를 통해 `Y_Quality`를 예측 후, **Threshold**를 이용해 `Y_Class`(0/1/2)로 변환  
+  - (추가로, **Line3·4**는 별도의 Classifier 접근을 시도하여 더 나은 성능을 확보)
+
+## 5.2 Threshold 설정 로직
+```python
+a = train_df[['Y_Class','Y_Quality']].groupby('Y_Class').agg(['mean','min','max','count'])
+
+preds = []
+for p in pre_preds:
+  if p <= a[('Y_Quality','max')][0]:
+    preds.append(0)
+  elif p <= a[('Y_Quality','min')][2]:
+    preds.append(1)
+  else:
+    preds.append(2)
+```
+- 기존의 `Y_Quality`와 `Y_Class` 분포를 분석하여 최적의 threshold를 설정하였음.  
+
+---
+
+# 6. 모델 검증 및 제출
+
+## 6.1 Stratified K-Fold
+- **불균형** 대응 차원에서 **Stratified** 분할로 Repeated K-Fold Validation 진행 (5 folds)
+- SMOTE·ADASYN 등 오버샘플링은 큰 효과가 없었고, Overfitting 위험만 증가 → 미사용  
+
+## 6.2 Submission Process
+- Line 1,2,5,6 의 경우 전체 라인에 대해 학습을 진행한 모델을 사용하여 Regressor로 예측  
+- 기존 `submission.csv` 파일을 활용하여 최종 제출  
+
+---
+
+
+
 # 7. To-Do + Additional Insights
 - **Incremental Learning / 주기적 모델 업데이트**  
 - **Threshold 조정 가능성 검토** (불량 최소화 목적)  
